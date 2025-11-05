@@ -43,7 +43,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         }
 
         [HttpGet("/Roatp/Financial/Current")]
-        public async Task<IActionResult> OpenApplications([StringTrim] string searchTerm, string sortColumn, string sortOrder, int page = 1)
+        public async Task<IActionResult> OpenApplications([StringTrim] string? searchTerm, string? sortColumn, string? sortOrder, int page = 1)
         {
             ValidateSearchTerm(searchTerm);
 
@@ -80,7 +80,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         }
 
         [HttpGet("/Roatp/Financial/Clarification")]
-        public async Task<IActionResult> ClarificationApplications([StringTrim] string searchTerm, string sortColumn, string sortOrder, int page = 1)
+        public async Task<IActionResult> ClarificationApplications([StringTrim] string? searchTerm, string? sortColumn, string? sortOrder, int page = 1)
         {
             ValidateSearchTerm(searchTerm);
 
@@ -101,7 +101,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         }
 
         [HttpGet("/Roatp/Financial/Outcome")]
-        public async Task<IActionResult> ClosedApplications([StringTrim] string searchTerm, string sortColumn, string sortOrder, int page = 1)
+        public async Task<IActionResult> ClosedApplications([StringTrim] string? searchTerm, string? sortColumn, string? sortOrder, int page = 1)
         {
             ValidateSearchTerm(searchTerm);
 
@@ -121,7 +121,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
             return View("~/Views/Financial/ClosedApplications.cshtml", viewmodel);
         }
 
-        private void ValidateSearchTerm(string searchTerm)
+        private void ValidateSearchTerm(string? searchTerm)
         {
             if (searchTerm != null)
             {
