@@ -8,7 +8,7 @@ namespace SFA.DAS.RoatpFinance.Web.StartupExtensions
 {
     public static class DataProtectionStartupExtensions
     {
-        public static IServiceCollection AddDataProtection(this IServiceCollection services, IWebConfiguration configuration, IHostingEnvironment environment)
+        public static IServiceCollection AddDataProtection(this IServiceCollection services, IWebConfiguration configuration, IHostEnvironment environment)
         {
             if (!environment.IsDevelopment())
             {

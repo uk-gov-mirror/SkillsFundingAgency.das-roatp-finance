@@ -42,12 +42,12 @@ namespace SFA.DAS.RoatpFinance.Web
         private const string Culture = "en-GB";
 
         private readonly IConfiguration _configuration;
-        private readonly IHostingEnvironment _env;
+        private readonly IHostEnvironment _env;
         private readonly ILogger<Startup> _logger;
 
         public IWebConfiguration ApplicationConfiguration { get; set; }
 
-        public Startup(IConfiguration configuration, IHostingEnvironment env, ILogger<Startup> logger)
+        public Startup(IConfiguration configuration, IHostEnvironment env, ILogger<Startup> logger)
         {
             _env = env;
             _logger = logger;
@@ -108,7 +108,7 @@ namespace SFA.DAS.RoatpFinance.Web
             .AddFluentValidation(fvc => fvc.RegisterValidatorsFromAssemblyContaining<Startup>())
             // NOTE: Can we move this to 2.2 to match the version of .NET Core we're coding against?
             .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-            .AddJsonOptions(options =>
+            .AddNewtonsoftJson(options =>
             {
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
@@ -206,7 +206,7 @@ namespace SFA.DAS.RoatpFinance.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -235,11 +235,13 @@ namespace SFA.DAS.RoatpFinance.Web
             app.UseStaticFiles();
             app.UseAuthentication();
             app.UseHealthChecks("/health");
-            app.UseMvc(routes =>
+            app.UseRouting();
+            app.UseAuthorization();
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(
+                endpoints.MapControllerRoute(
                     name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
         }
 

@@ -1,6 +1,6 @@
-﻿using Microsoft.Azure.Services.AppAuthentication;
+﻿using System;
+using Azure.Identity;
 using SFA.DAS.RoatpFinance.Web.Settings;
-using System;
 
 namespace SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients.TokenService
 {
@@ -18,10 +18,11 @@ namespace SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients.TokenService
             if (baseUri != null && baseUri.IsLoopback)
                 return string.Empty;
 
-            var azureServiceTokenProvider = new AzureServiceTokenProvider();
-            var generateTokenTask = azureServiceTokenProvider.GetAccessTokenAsync(_configuration.QnaApiAuthentication.Identifier);
+            var credential = new DefaultAzureCredential();
+            var generateTokenTask = credential.GetTokenAsync(
+                new Azure.Core.TokenRequestContext(new[] { _configuration.QnaApiAuthentication.Identifier }));
 
-            return generateTokenTask.GetAwaiter().GetResult();
+            return generateTokenTask.GetAwaiter().GetResult().Token;
         }
     }
 }

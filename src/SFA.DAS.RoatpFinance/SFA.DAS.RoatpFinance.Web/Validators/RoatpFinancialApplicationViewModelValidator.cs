@@ -70,7 +70,7 @@ namespace SFA.DAS.RoatpFinance.Web.Validators
             });
         }
 
-        private void ProcessDate(FinancialDueDate dueDate, string propertyName, CustomContext context)
+        private void ProcessDate(FinancialDueDate dueDate, string propertyName, ValidationContext<RoatpFinancialApplicationViewModel> context)
         {
             if (string.IsNullOrWhiteSpace(dueDate.Day) || string.IsNullOrWhiteSpace(dueDate.Month) || string.IsNullOrWhiteSpace(dueDate.Year))
             {

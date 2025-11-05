@@ -6,7 +6,7 @@ namespace SFA.DAS.RoatpFinance.Web.StartupExtensions
 {
     public static class CacheStartupExtensions
     {
-        public static IServiceCollection AddCache(this IServiceCollection services, IWebConfiguration configuration, IHostingEnvironment environment)
+        public static IServiceCollection AddCache(this IServiceCollection services, IWebConfiguration configuration, IHostEnvironment environment)
         {
             if (environment.IsDevelopment())
             {
