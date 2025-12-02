@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
+﻿namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
 {
     public static class FinancialApplicationSelectedGrade
     {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace SFA.DAS.RoatpFinance.Web.ViewModels.Paging
+﻿namespace SFA.DAS.RoatpFinance.Web.ViewModels.Paging
 {
     public abstract class PaginatedList
     {

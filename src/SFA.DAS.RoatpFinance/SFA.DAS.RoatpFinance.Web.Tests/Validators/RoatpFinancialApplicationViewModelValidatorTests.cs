@@ -26,7 +26,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "FinancialReviewDetails.SelectedGrade");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "FinancialReviewDetails.SelectedGrade");
             error.Should().NotBeNull();
         }
 
@@ -45,7 +45,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "InadequateComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "InadequateComments");
             error.Should().NotBeNull();
         }
 
@@ -64,7 +64,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "InadequateComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "InadequateComments");
             error.Should().NotBeNull();
         }
 
@@ -83,7 +83,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "InadequateExternalComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "InadequateExternalComments");
             error.Should().NotBeNull();
         }
 
@@ -102,7 +102,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "InadequateExternalComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "InadequateExternalComments");
             error.Should().NotBeNull();
         }
 
@@ -120,7 +120,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "ClarificationComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "ClarificationComments");
             error.Should().NotBeNull();
         }
 
@@ -138,7 +138,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "ClarificationComments");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "ClarificationComments");
             error.Should().NotBeNull();
         }
 
@@ -156,7 +156,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "OutstandingFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "OutstandingFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -179,7 +179,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "OutstandingFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "OutstandingFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -202,7 +202,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "OutstandingFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "OutstandingFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -225,7 +225,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "OutstandingFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "OutstandingFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -243,7 +243,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "GoodFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "GoodFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -266,7 +266,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "GoodFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "GoodFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -289,7 +289,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "GoodFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "GoodFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -312,7 +312,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "GoodFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "GoodFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -331,7 +331,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "SatisfactoryFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "SatisfactoryFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -354,7 +354,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "SatisfactoryFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "SatisfactoryFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -377,7 +377,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "SatisfactoryFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "SatisfactoryFinancialDueDate");
             error.Should().NotBeNull();
         }
 
@@ -400,7 +400,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var validationResponse = _validator.Validate(_viewModel);
 
-            var error = validationResponse.Errors.FirstOrDefault(x => x.PropertyName == "SatisfactoryFinancialDueDate");
+            var error = validationResponse.Errors.FirstOrDefault(x => x.Field == "SatisfactoryFinancialDueDate");
             error.Should().NotBeNull();
         }
     }

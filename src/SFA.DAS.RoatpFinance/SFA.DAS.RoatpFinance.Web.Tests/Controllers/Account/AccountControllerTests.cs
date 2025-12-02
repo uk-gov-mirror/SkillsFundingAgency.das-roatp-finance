@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.WsFederation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using SFA.DAS.AdminService.Common.Testing.MockedObjects;
+using NUnit.Framework.Legacy;
 using SFA.DAS.RoatpFinance.Web.Controllers;
 using SFA.DAS.RoatpFinance.Web.Settings;
 using SFA.DAS.RoatpFinance.Web.ViewModels.Errors;
@@ -22,7 +21,6 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Account
         public void Setup()
         {
             _configurationMock = new Mock<IWebConfiguration>();
-            _configurationMock.Setup(x => x.UseDfeSignIn).Returns(true);
             _configurationMock.Setup(x => x.DfESignInServiceHelpUrl).Returns("test");
             _controller = new AccountController(Mock.Of<ILogger<AccountController>>(), _configurationMock.Object)
             {
@@ -32,22 +30,8 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Account
         }
 
         [Test]
-        public void SignIn_returns_expected_ChallengeResult()
-        {
-            _configurationMock.Setup(x => x.UseDfeSignIn).Returns(false);
-            
-            var result = _controller.SignIn() as ChallengeResult;
-
-            Assert.That(result, Is.Not.Null);
-            CollectionAssert.IsNotEmpty(result.AuthenticationSchemes);
-            CollectionAssert.Contains(result.AuthenticationSchemes, WsFederationDefaults.AuthenticationScheme);
-        }
-        
-        [Test]
         public void SignIn_returns_expected_ChallengeResult_DfeSignIn()
         {
-            _configurationMock.Setup(x => x.UseDfeSignIn).Returns(true);
-            
             var result = _controller.SignIn() as ChallengeResult;
 
             Assert.That(result, Is.Not.Null);
@@ -60,27 +44,13 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Account
         {
             var result = _controller.PostSignIn() as RedirectToActionResult;
 
-            Assert.AreEqual("Home", result.ControllerName);
-            Assert.AreEqual("Index", result.ActionName);
+            Assert.That("Home", Is.EqualTo(result.ControllerName));
+            Assert.That("Index", Is.EqualTo(result.ActionName));
         }
 
-        [Test]
-        public void SignOut_returns_expected_SignOutResult_For_Pirean()
-        {
-            _configurationMock.Setup(x => x.UseDfeSignIn).Returns(false);
-                
-            var result = _controller.SignOut() as SignOutResult;
-
-            Assert.That(result, Is.Not.Null);
-            CollectionAssert.IsNotEmpty(result.AuthenticationSchemes);
-            CollectionAssert.Contains(result.AuthenticationSchemes, WsFederationDefaults.AuthenticationScheme);
-            CollectionAssert.Contains(result.AuthenticationSchemes, CookieAuthenticationDefaults.AuthenticationScheme);
-        }
         [Test]
         public void SignOut_returns_expected_SignOutResult_For_DfeSignIn()
         {
-            _configurationMock.Setup(x => x.UseDfeSignIn).Returns(true);
-                
             var result = _controller.SignOut() as SignOutResult;
 
             Assert.That(result, Is.Not.Null);
@@ -95,7 +65,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Account
             var result = _controller.SignedOut() as ViewResult;
 
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual("SignedOut", result.ViewName);
+            Assert.That("SignedOut", Is.EqualTo(result.ViewName));
         }
 
         [Test]
@@ -104,11 +74,10 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Account
             var result = _controller.AccessDenied() as ViewResult;
 
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual("AccessDenied", result.ViewName);
+            Assert.That("AccessDenied", Is.EqualTo(result.ViewName));
             var actualModel = result.Model as Error403ViewModel;
-            Assert.NotNull(actualModel);
-            Assert.True(actualModel.UseDfESignIn);
-            Assert.AreEqual("test", actualModel.HelpPageLink);
+            Assert.That(actualModel, Is.Not.Null);
+            Assert.That("test", Is.EqualTo(actualModel.HelpPageLink));
         }
     }
 }

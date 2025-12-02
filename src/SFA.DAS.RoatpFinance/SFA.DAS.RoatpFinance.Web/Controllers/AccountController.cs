@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.WsFederation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using SFA.DAS.RoatpFinance.Web.Settings;
@@ -25,30 +22,16 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         [HttpGet]
         public IActionResult SignIn()
         {
-            var challengeScheme = _webConfiguration.UseDfeSignIn
-                ? OpenIdConnectDefaults.AuthenticationScheme
-                : WsFederationDefaults.AuthenticationScheme;
             _logger.LogInformation("Start of Sign In");
             var redirectUrl = Url.Action("PostSignIn", "Account");
             return Challenge(
                 new AuthenticationProperties { RedirectUri = redirectUrl },
-                challengeScheme);
+                OpenIdConnectDefaults.AuthenticationScheme);
         }
 
         [HttpGet]
         public IActionResult PostSignIn()
         {
-            //if (!HttpContext.User.HasValidRole())
-            //{
-            //    _logger.LogInformation($"PostSignIn - User '{HttpContext.User.Identity.Name}' does not have a valid role");
-            //    foreach (var cookie in Request.Cookies.Keys)
-            //    {
-            //        Response.Cookies.Delete(cookie);
-            //    }
-
-            //    return RedirectToAction("AccessDenied");
-            //}
-
             return RedirectToAction("Index", "Home");
         }
 
@@ -61,10 +44,6 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
             {
                 Response.Cookies.Delete(cookie);
             }
-            
-            var authScheme = _webConfiguration.UseDfeSignIn
-                ? OpenIdConnectDefaults.AuthenticationScheme
-                : WsFederationDefaults.AuthenticationScheme;
 
             return SignOut(
                 new AuthenticationProperties
@@ -73,7 +52,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                     AllowRefresh = true
                 },
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                authScheme);
+                OpenIdConnectDefaults.AuthenticationScheme);
 
         }
 
@@ -88,7 +67,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         {
             if (HttpContext.User != null)
             {
-                var userName = HttpContext.User.Identity.Name ?? HttpContext.User.FindFirstValue(ClaimTypes.Upn);
+                var userName = HttpContext.User.Identity?.Name ?? HttpContext.User.FindFirstValue(ClaimTypes.Upn);
                 var roles = HttpContext.User.Claims.Where(c => c.Type == ClaimTypes.Role || c.Type == Domain.Roles.RoleClaimType).Select(c => c.Value);
 
                 _logger.LogError($"AccessDenied - User '{userName}' does not have a valid role. They have the following roles: '{string.Join(",", roles)}'");
@@ -96,7 +75,6 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
 
             var model = new Error403ViewModel
             {
-                UseDfESignIn = _webConfiguration.UseDfeSignIn,
                 HelpPageLink = _webConfiguration.DfESignInServiceHelpUrl
             };
 

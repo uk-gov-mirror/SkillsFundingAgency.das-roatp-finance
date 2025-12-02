@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SFA.DAS.AdminService.Common.Validation;
 using SFA.DAS.QnA.Api.Types;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply;
@@ -14,13 +13,12 @@ using SFA.DAS.RoatpFinance.Web.Services;
 using SFA.DAS.RoatpFinance.Web.Validators;
 using SFA.DAS.RoatpFinance.Web.ViewModels;
 using SFA.DAS.RoatpFinance.Web.ViewModels.Paging;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.Http.Headers;
 using SFA.DAS.RoatpFinance.Web.Extensions;
+using SFA.DAS.RoatpFinance.Web.Infrastructure.Models;
+using SFA.DAS.RoatpFinance.Web.Validators.Validation;
 
 namespace SFA.DAS.RoatpFinance.Web.Controllers
 {
@@ -30,15 +28,17 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         private readonly IRoatpApplicationApiClient _applyApiClient;
         private readonly IQnaApiClient _qnaApiClient;
         private readonly ISearchTermValidator _searchTermValidator;
+        private readonly IRoatpFinancialApplicationViewModelValidator _applicationValidator;
         private readonly IRoatpFinancialClarificationViewModelValidator _clarificationValidator;
         private readonly ICsvExportService _csvExportService;
 
-        public RoatpFinancialController(IRoatpApplicationApiClient applyApiClient, IQnaApiClient qnaApiClient, ISearchTermValidator searchTermValidator, IRoatpFinancialClarificationViewModelValidator clarificationValidator, ICsvExportService csvExportService)
+        public RoatpFinancialController(IRoatpApplicationApiClient applyApiClient, IQnaApiClient qnaApiClient, ISearchTermValidator searchTermValidator, IRoatpFinancialClarificationViewModelValidator clarificationValidator, ICsvExportService csvExportService, IRoatpFinancialApplicationViewModelValidator applicationValidator)
         {
             _applyApiClient = applyApiClient;
             _searchTermValidator = searchTermValidator;
             _clarificationValidator = clarificationValidator;
             _csvExportService = csvExportService;
+            _applicationValidator = applicationValidator;
             _qnaApiClient = qnaApiClient;
         }
 
@@ -146,6 +146,14 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
 
             var vm = await CreateRoatpFinancialApplicationViewModel(application);
 
+            var validationResponse = _applicationValidator.Validate(vm);
+
+            if (validationResponse.Errors.Count > 0)
+            {
+                vm.ErrorMessages = validationResponse.Errors
+                    .Where(x => x.Field != "FinancialReviewDetails.SelectedGrade").ToList();
+            }
+
             var contact = await _applyApiClient.GetContactForApplication(application.ApplicationId);
             vm.ApplicantEmailAddress = contact?.Email;
 
@@ -162,7 +170,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                     case FinancialReviewStatus.New:
                     case FinancialReviewStatus.InProgress:
                     case null:
-                        await _applyApiClient.StartFinancialReview(application.ApplicationId, HttpContext.User.UserDisplayName());
+                        await _applyApiClient.StartFinancialReview(application.ApplicationId,
+                            new StartFinancialReviewCommandModel { Reviewer = HttpContext.User.UserDisplayName() });
                         return View("~/Views/Financial/Application.cshtml", vm);
                     case FinancialReviewStatus.ClarificationSent:
                         var clarificationVm = ConvertFinancialApplicationToFinancialClarificationViewModel(vm, vm.ClarificationComments);
@@ -184,7 +193,9 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                 return RedirectToAction(nameof(OpenApplications));
             }
 
-            if (ModelState.IsValid)
+            var validationResponse = _applicationValidator.Validate(vm);
+
+            if (validationResponse.Errors.Count == 0)
             {
                 var financialReviewDetails = new FinancialReviewDetails
                 {
@@ -206,6 +217,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                 newvm.InadequateComments = vm.InadequateComments;
                 newvm.InadequateExternalComments = vm.InadequateExternalComments;
                 newvm.ClarificationComments = vm.ClarificationComments;
+                newvm.ErrorMessages = validationResponse.Errors;
 
                 // For now, only replace selected grade with whatever was selected
                 if (vm.FinancialReviewDetails != null)
@@ -367,12 +379,13 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         private async Task<RoatpFinancialClarificationViewModel> RemoveUploadedFileAndRebuildViewModel(Guid applicationId, RoatpFinancialClarificationViewModel vm,
          string removeClarificationFileName, RoatpApply application)
         {
-            var fileRemoved = await _applyApiClient.RemoveClarificationFile(applicationId,
-                HttpContext.User.UserId(), removeClarificationFileName);
+            var model = new RemoveClarificationFileCommandModel
+                { UserId = HttpContext.User.UserId(), FileName = removeClarificationFileName };
+            var fileRemoved = await _applyApiClient.RemoveClarificationFile(applicationId, model);
 
 
             var financialReviewDets = vm.FinancialReviewDetails;
-            if (fileRemoved)
+            if (fileRemoved.ResponseMessage.StatusCode == HttpStatusCode.OK)
             {
                 var clarificationFiles = financialReviewDets.ClarificationFiles;
                 var newClarificationFiles = new List<ClarificationFile>();
@@ -415,11 +428,27 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                 var fileToUpload = vm.FilesToUpload[0].FileName;
                 if (!FileAlreadyInClarifications(financialReviewDets.ClarificationFiles, fileToUpload))
                 {
-                    var fileUploadedSuccessfully = await _applyApiClient.UploadClarificationFile(applicationId,
-                        HttpContext.User.UserId(), vm.FilesToUpload);
+                    var content = new MultipartFormDataContent
+                    {
+                        { new StringContent(HttpContext.User.UserId()), "UserId" }
+                    };
+
+                    foreach (var file in vm.FilesToUpload)
+                    {
+                        var fileContent = new StreamContent(file.OpenReadStream())
+                        {
+                            Headers =
+                            {
+                                ContentLength = file.Length, ContentType = new MediaTypeHeaderValue(file.ContentType)
+                            }
+                        };
+                        content.Add(fileContent, file.FileName, file.FileName);
+                    }
+
+                    var fileUploadedSuccessfully = await _applyApiClient.UploadClarificationFile(applicationId, content);
 
 
-                    if (fileUploadedSuccessfully)
+                    if (fileUploadedSuccessfully.ResponseMessage.StatusCode == HttpStatusCode.OK)
                     {
                         if (financialReviewDets.ClarificationFiles == null)
                             financialReviewDets.ClarificationFiles = new List<ClarificationFile>();
@@ -471,7 +500,9 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
             var financialSections = await GetFinancialSections(application);
 
             var financialReviewDetails = await _applyApiClient.GetFinancialReviewDetails(application.ApplicationId);
-            return new RoatpFinancialApplicationViewModel(application, financialReviewDetails, parentCompanySection, activelyTradingSection, organisationTypeSection, financialSections);
+            var viewModel = new RoatpFinancialApplicationViewModel(application, financialReviewDetails, parentCompanySection, activelyTradingSection, organisationTypeSection, financialSections);
+            
+            return viewModel;
         }
 
         private async Task<Section> GetParentCompanySection(Guid applicationId)

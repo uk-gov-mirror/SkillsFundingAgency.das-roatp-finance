@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Export
+﻿namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Export
 {
     public class RoatpFinancialSummaryExportItem
     {

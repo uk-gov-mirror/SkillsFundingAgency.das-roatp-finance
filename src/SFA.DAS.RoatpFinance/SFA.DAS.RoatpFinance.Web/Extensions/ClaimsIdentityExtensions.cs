@@ -1,6 +1,4 @@
-using System.Linq;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging;
 
 namespace SFA.DAS.RoatpFinance.Web.Extensions
 {

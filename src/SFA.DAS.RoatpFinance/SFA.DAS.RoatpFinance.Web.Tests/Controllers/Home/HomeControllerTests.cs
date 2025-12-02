@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
-using SFA.DAS.AdminService.Common.Testing.MockedObjects;
+using NUnit.Framework.Legacy;
 using SFA.DAS.RoatpFinance.Web.Controllers;
 using SFA.DAS.RoatpFinance.Web.Settings;
 using SFA.DAS.RoatpFinance.Web.ViewModels.Errors;
@@ -46,8 +46,8 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.Home
         {
             var result = _controller.Index() as RedirectToActionResult;
 
-            Assert.AreEqual("RoatpFinancial", result.ControllerName);
-            Assert.AreEqual("OpenApplications", result.ActionName);
+            Assert.That("RoatpFinancial", Is.EqualTo(result.ControllerName));
+            Assert.That("OpenApplications", Is.EqualTo(result.ActionName));
         }
 
         [Test]

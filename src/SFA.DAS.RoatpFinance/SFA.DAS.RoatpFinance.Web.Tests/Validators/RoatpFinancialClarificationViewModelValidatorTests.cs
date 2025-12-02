@@ -3,7 +3,7 @@ using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
-using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.Http;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply;
 using SFA.DAS.RoatpFinance.Web.ViewModels;
 using SFA.DAS.RoatpFinance.Web.Validators;
@@ -397,9 +397,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var response = _validator.Validate(_viewModel, true, false);
 
-            Assert.IsFalse(response.IsValid);
-            Assert.AreEqual("The selected file must be smaller than 5MB", response.Errors.First().ErrorMessage);
-            Assert.AreEqual("ClarificationFile", response.Errors.First().Field);
+            Assert.That(response.IsValid, Is.False);
+            Assert.That("The selected file must be smaller than 5MB", Is.EqualTo(response.Errors.First().ErrorMessage));
+            Assert.That("ClarificationFile", Is.EqualTo(response.Errors.First().Field));
         }
 
 
@@ -427,9 +427,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var response = _validator.Validate(_viewModel, true, false);
 
-            Assert.IsFalse(response.IsValid);
-            Assert.AreEqual("The selected file must be a PDF", response.Errors.First().ErrorMessage);
-            Assert.AreEqual("ClarificationFile", response.Errors.First().Field);
+            Assert.That(response.IsValid, Is.False);
+            Assert.That("The selected file must be a PDF", Is.EqualTo(response.Errors.First().ErrorMessage));
+            Assert.That("ClarificationFile", Is.EqualTo(response.Errors.First().Field));
         }
 
 
@@ -453,9 +453,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Validators
 
             var response = _validator.Validate(_viewModel, true, false);
 
-            Assert.IsFalse(response.IsValid);
-            Assert.AreEqual("Select a file", response.Errors.First().ErrorMessage);
-            Assert.AreEqual("ClarificationFile", response.Errors.First().Field);
+            Assert.That(response.IsValid, Is.False);
+            Assert.That("Select a file", Is.EqualTo(response.Errors.First().ErrorMessage));
+            Assert.That("ClarificationFile", Is.EqualTo(response.Errors.First().Field));
         }
 
         private static FormFile GenerateClarificationFile(string fileName, bool hasPdfHeader, int length)

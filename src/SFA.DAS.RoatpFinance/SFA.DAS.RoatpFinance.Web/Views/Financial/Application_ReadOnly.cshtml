@@ -1,6 +1,6 @@
 @using System.Globalization;
 @using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
-@using SFA.DAS.AdminService.Common.Extensions
+@using SFA.DAS.RoatpFinance.Web.Extensions
 
 @model SFA.DAS.RoatpFinance.Web.ViewModels.RoatpFinancialApplicationViewModel
 
@@ -15,7 +15,7 @@
 <div class="govuk-breadcrumbs">
     <ol class="govuk-breadcrumbs__list">
         <li class="govuk-breadcrumbs__list-item">
-            <a class="govuk-breadcrumbs__link" asp-action="Index" asp-controller="Dashboard">Dashboard</a>
+            <a class="govuk-breadcrumbs__link" asp-action="Dashboard" asp-controller="Home">Dashboard</a>
         </li>
         <li class="govuk-breadcrumbs__list-item">
             <a class="govuk-breadcrumbs__link" asp-action="@backAction" asp-controller="RoatpFinancial">RoATP assessments</a>
@@ -72,9 +72,12 @@
                                                 case "CheckboxList":
                                                 case "ComplexCheckboxList":
                                                     <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
-                                                        @foreach (var selectedAnswer in answer.Split(','))
+                                                        @if(answer != null)
                                                         {
-                                                            <li>@selectedAnswer</li>
+                                                            foreach (var selectedAnswer in answer.Split(','))
+                                                            {
+                                                                <li>@selectedAnswer</li>
+                                                            }
                                                         }
                                                     </ul>
                                                     break;
@@ -182,9 +185,12 @@
                             else
                             {
                                 <ul class="govuk-list">
-                                    @foreach (var file in Model.FinancialReviewDetails?.ClarificationFiles)
+                                    @if (Model.FinancialReviewDetails?.ClarificationFiles != null)
                                     {
-                                        <li><a class="govuk-link govuk-link--no-visited-state" asp-action="DownloadClarificationFile" asp-controller="RoatpFinancial" asp-route-ApplicationId="@Model.ApplicationId" asp-route-Filename="@file.Filename">@file.Filename</a></li>
+                                        foreach (var file in Model.FinancialReviewDetails.ClarificationFiles)
+                                        {
+                                            <li><a class="govuk-link govuk-link--no-visited-state" asp-action="DownloadClarificationFile" asp-controller="RoatpFinancial" asp-route-ApplicationId="@Model.ApplicationId" asp-route-Filename="@file.Filename">@file.Filename</a></li>
+                                        }
                                     }
                                 </ul>
                             }

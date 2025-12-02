@@ -1,22 +1,32 @@
 ﻿using SFA.DAS.QnA.Api.Types;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
+using RestEase;
 
 namespace SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients
 {
     public interface IQnaApiClient
     {
-        Task<string> GetQuestionTag(Guid applicationId, string questionTag);
+        [Get("applications/{applicationId}/applicationData/{questionTag}")]
+        Task<string> GetQuestionTag([Path] Guid applicationId, [Path] string questionTag);
 
-        Task<IEnumerable<Sequence>> GetSequences(Guid applicationId);
-        Task<Sequence> GetSequence(Guid applicationId, Guid sequenceId);
-        Task<Sequence> GetSequenceBySequenceNo(Guid applicationId, int sequenceNo);
-        Task<IEnumerable<Section>> GetSections(Guid applicationId, Guid sequenceId);
-        Task<Section> GetSection(Guid applicationId, Guid sectionId);
-        Task<Section> GetSectionBySectionNo(Guid applicationId, int sequenceNo, int sectionNo);
+        [Get("applications/{applicationId}/sequences")]
+        Task<IEnumerable<Sequence>> GetSequences([Path] Guid applicationId);
 
-        Task<HttpResponseMessage> DownloadFile(Guid applicationId, Guid sectionId, string pageId, string questionId, string fileName);
+        [Get("applications/{applicationId}/sequences/{sequenceId}")]
+        Task<Sequence> GetSequence([Path] Guid applicationId, [Path] Guid sequenceId);
+
+        [Get("applications/{applicationId}/sequences/{sequenceNo}")]
+        Task<Sequence> GetSequenceBySequenceNo([Path] Guid applicationId, [Path] int sequenceNo);
+
+        [Get("applications/{applicationId}/sequences/{sequenceId}/sections")]
+        Task<IEnumerable<Section>> GetSections([Path] Guid applicationId, [Path] Guid sequenceId);
+
+        [Get("applications/{applicationId}/sections/{sectionId}")]
+        Task<Section> GetSection([Path] Guid applicationId, [Path] Guid sectionId);
+
+        [Get("applications/{applicationId}/sequences/{sequenceNo}/sections/{sectionNo}")]
+        Task<Section> GetSectionBySectionNo([Path] Guid applicationId, [Path] int sequenceNo, [Path] int sectionNo);
+
+        [Get("/applications/{applicationId}/sections/{sectionId}/pages/{pageId}/questions/{questionId}/download/{fileName}")]
+        Task<HttpResponseMessage> DownloadFile([Path] Guid applicationId, [Path] Guid sectionId, [Path] string pageId, [Path] string questionId, [Path] string fileName);
     }
 }

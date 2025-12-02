@@ -1,5 +1,4 @@
 @using System.Globalization;
-@using SFA.DAS.AdminService.Common.Extensions
 @using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
 @using SFA.DAS.RoatpFinance.Web.Extensions
 
@@ -40,7 +39,7 @@
 <div class="govuk-breadcrumbs">
     <ol class="govuk-breadcrumbs__list">
         <li class="govuk-breadcrumbs__list-item">
-            <a class="govuk-breadcrumbs__link" asp-action="Index" asp-controller="Dashboard">Dashboard</a>
+            <a class="govuk-breadcrumbs__link" asp-action="Dashboard" asp-controller="Home">Dashboard</a>
         </li>
         <li class="govuk-breadcrumbs__list-item">
             <a class="govuk-breadcrumbs__link" asp-action="ClarificationApplications"
@@ -180,9 +179,12 @@
                                                 case "CheckboxList":
                                                 case "ComplexCheckboxList":
                                                     <ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0">
-                                                        @foreach (var selectedAnswer in answer.Split(','))
+                                                        @if (answer != null && answer.Split(',') != null)
                                                         {
-                                                            <li>@selectedAnswer</li>
+                                                            foreach (var selectedAnswer in answer.Split(','))
+                                                            {
+                                                                <li>@selectedAnswer</li>
+                                                            }
                                                         }
                                                     </ul>
                                                     break;
@@ -285,7 +287,7 @@
         <div class="govuk-grid-column-two-thirds">
 
             <form class="das-ajax-form js-disable-on-submit" method="post" enctype="multipart/form-data"
-                  asp-action="SubmitClarification" asp-controller="RoatpFinancial">
+                  asp-action="SubmitClarification" asp-controller="RoatpFinancial" asp-route-applicationId="@Model.ApplicationId">
                 <input type="hidden" name="ApplicationId" value="@Model.ApplicationId" />
                 <input type="hidden" name="OrgId" value="@Model.OrgId" />
                 <input type="hidden" name="ApplicantEmailAddress" value="@Model.ApplicantEmailAddress" />

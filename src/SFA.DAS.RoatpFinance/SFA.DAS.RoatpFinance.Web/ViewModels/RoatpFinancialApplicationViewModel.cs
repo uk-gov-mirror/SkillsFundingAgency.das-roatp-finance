@@ -1,9 +1,7 @@
 ﻿using SFA.DAS.QnA.Api.Types;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using SFA.DAS.RoatpFinance.Web.Validators.Validation;
 
 namespace SFA.DAS.RoatpFinance.Web.ViewModels
 {
@@ -35,6 +33,9 @@ namespace SFA.DAS.RoatpFinance.Web.ViewModels
         public string ApplicationClosedBy { get; }
         public string ApplicationComments { get; }
         public string ApplicationExternalComments { get; }
+
+        public List<ValidationErrorDetail> ErrorMessages { get; set; }
+
 
         public RoatpFinancialApplicationViewModel() { }
 

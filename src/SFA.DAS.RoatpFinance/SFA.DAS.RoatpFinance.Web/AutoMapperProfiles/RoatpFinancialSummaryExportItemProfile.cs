@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using SFA.DAS.RoatpFinance.Web.ApplyTypes.Dashboard;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Export;
 
 namespace SFA.DAS.RoatpFinance.Web.AutoMapperProfiles

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Dashboard
+﻿namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Dashboard
 {
     public class RoatpApplicationSummaryItem
     {

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
+﻿namespace SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply
 {
     public class RoatpContact
     {

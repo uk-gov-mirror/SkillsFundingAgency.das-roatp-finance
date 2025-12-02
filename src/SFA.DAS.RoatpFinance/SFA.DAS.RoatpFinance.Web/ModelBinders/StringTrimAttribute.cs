@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SFA.DAS.RoatpFinance.Web.ModelBinders
+﻿namespace SFA.DAS.RoatpFinance.Web.ModelBinders
 {
     /// <summary>
     /// Denotes a data field, class property or method parameter that should be trimmed of whitespace during binding.

@@ -9,18 +9,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
-using SFA.DAS.AdminService.Common.Testing.MockedObjects;
-using SFA.DAS.AdminService.Common.Validation;
+using RestEase;
 using SFA.DAS.QnA.Api.Types;
 using SFA.DAS.QnA.Api.Types.Page;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Export;
-using SFA.DAS.RoatpFinance.Web.AutoMapperProfiles;
 using SFA.DAS.RoatpFinance.Web.Controllers;
 using SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients;
+using SFA.DAS.RoatpFinance.Web.Infrastructure.Models;
 using SFA.DAS.RoatpFinance.Web.Services;
 using SFA.DAS.RoatpFinance.Web.Validators;
+using SFA.DAS.RoatpFinance.Web.Validators.Validation;
 using SFA.DAS.RoatpFinance.Web.ViewModels;
 
 namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
@@ -32,6 +32,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
         private Mock<IQnaApiClient> _qnaApiClient;
         private Mock<ISearchTermValidator> _searchTermValidator;
         private Mock<IRoatpFinancialClarificationViewModelValidator> _clarificationValidator;
+        private Mock<IRoatpFinancialApplicationViewModelValidator> _applicationValidator;
         private Mock<ICsvExportService> _csvExportService;
         private RoatpFinancialController _controller;
         private readonly Guid _applicationId = Guid.NewGuid();
@@ -47,6 +48,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _applicationApplyApiClient = new Mock<IRoatpApplicationApiClient>();
             _searchTermValidator = new Mock<ISearchTermValidator>();
             _clarificationValidator = new Mock<IRoatpFinancialClarificationViewModelValidator>();
+            _applicationValidator = new Mock<IRoatpFinancialApplicationViewModelValidator>();
             _qnaApiClient = new Mock<IQnaApiClient>();
             _csvExportService = new Mock<ICsvExportService>();
 
@@ -54,10 +56,13 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _financialReviewDetails = new FinancialReviewDetails();
             MockHttpContextAccessor = SetupMockedHttpContextAccessor();
 
+            _applicationValidator.Setup(x => x.Validate(It.IsAny<RoatpFinancialApplicationViewModel>()))
+                .Returns(new ValidationResponse());
+
             _controller = new RoatpFinancialController(
                 _applicationApplyApiClient.Object,
                 _qnaApiClient.Object,
-                _searchTermValidator.Object, _clarificationValidator.Object, _csvExportService.Object)
+                _searchTermValidator.Object, _clarificationValidator.Object, _csvExportService.Object, _applicationValidator.Object)
             {
                 ControllerContext = MockedControllerContext.Setup()
             };
@@ -169,7 +174,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             var result = await _controller.ViewApplication(_applicationId);
             var viewResult = result as ViewResult;
 
-            Assert.IsTrue(viewResult.ViewName.EndsWith(expectedView));
+            Assert.That(viewResult.ViewName.EndsWith(expectedView), Is.True);
         }
 
 
@@ -179,7 +184,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _applicationApplyApiClient.Setup(x => x.GetApplication(_applicationId)).ReturnsAsync((RoatpApply)null);
 
             var result = _controller.SubmitClarification(_applicationId, new RoatpFinancialClarificationViewModel()).Result as RedirectToActionResult;
-            Assert.AreEqual("OpenApplications", result.ActionName);
+            Assert.That("OpenApplications", Is.EqualTo(result.ActionName));
         }
 
         [TestCase(FinancialApplicationSelectedGrade.Outstanding)]
@@ -247,7 +252,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             };
             var result = _controller.SubmitClarification(_applicationId, vm).Result as RedirectToActionResult;
             _applicationApplyApiClient.Verify(x => x.ReturnFinancialReview(_applicationId, It.IsAny<FinancialReviewDetails>()), Times.Once);
-            Assert.AreEqual("Graded", result.ActionName);
+            Assert.That("Graded", Is.EqualTo(result.ActionName));
         }
 
         [Test]
@@ -266,11 +271,11 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _controller = new RoatpFinancialController(
                 _applicationApplyApiClient.Object,
                 _qnaApiClient.Object,
-                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>())
+                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>(), _applicationValidator.Object)
             {
                 ControllerContext = MockedControllerContext.Setup(buttonPressed)
             };
-
+            
             _clarificationValidator.Setup(x =>
                     x.Validate(It.IsAny<RoatpFinancialClarificationViewModel>(), It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(new ValidationResponse { });
@@ -301,8 +306,8 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 });
 
             _applicationApplyApiClient.Setup(x =>
-                    x.UploadClarificationFile(_applicationId, It.IsAny<string>(), It.IsAny<IFormFileCollection>()))
-                .ReturnsAsync(true);
+                    x.UploadClarificationFile(_applicationId, It.IsAny<MultipartFormDataContent>()))
+                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
 
 
             _financialReviewDetails = new FinancialReviewDetails
@@ -333,10 +338,10 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             };
             var result = _controller.SubmitClarification(_applicationId, vm).Result as ViewResult;
 
-            Assert.IsTrue(result.ViewName.Contains("Application_Clarification.cshtml"));
+            Assert.That(result.ViewName.Contains("Application_Clarification.cshtml"), Is.True);
             var resultModel = result.Model as RoatpFinancialClarificationViewModel;
 
-            Assert.IsTrue(resultModel.FinancialReviewDetails.ClarificationFiles[0].Filename == "file.pdf");
+            Assert.That(resultModel.FinancialReviewDetails.ClarificationFiles[0].Filename == "file.pdf", Is.True);
         }
 
         [Test]
@@ -355,7 +360,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _controller = new RoatpFinancialController(
                 _applicationApplyApiClient.Object,
                 _qnaApiClient.Object,
-                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>())
+                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>(), _applicationValidator.Object)
             {
                 ControllerContext = MockedControllerContext.Setup(buttonPressed)
             };
@@ -401,9 +406,10 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                     }
                 });
 
+            var model = new RemoveClarificationFileCommandModel { UserId = "", FileName = fileToBeRemoved };
             _applicationApplyApiClient.Setup(x =>
-                    x.RemoveClarificationFile(_applicationId, It.IsAny<string>(), fileToBeRemoved))
-                .ReturnsAsync(true);
+                    x.RemoveClarificationFile(It.IsAny<Guid>(), It.IsAny<RemoveClarificationFileCommandModel>()))
+                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
 
             _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new FinancialReviewDetails());
 
@@ -423,10 +429,10 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             };
             var result = _controller.SubmitClarification(_applicationId, vm).Result as ViewResult;
 
-            Assert.IsTrue(result.ViewName.Contains("Application_Clarification.cshtml"));
+            Assert.That(result.ViewName.Contains("Application_Clarification.cshtml"), Is.True);
             var resultModel = result.Model as RoatpFinancialClarificationViewModel;
 
-            Assert.IsNull(resultModel.FinancialReviewDetails.ClarificationFiles);
+            Assert.That(resultModel.FinancialReviewDetails.ClarificationFiles, Is.Null);
         }
 
         [Test]
@@ -445,7 +451,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _controller = new RoatpFinancialController(
                 _applicationApplyApiClient.Object,
                 _qnaApiClient.Object,
-                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>())
+                _searchTermValidator.Object, _clarificationValidator.Object, Mock.Of<ICsvExportService>(), _applicationValidator.Object)
             {
                 ControllerContext = MockedControllerContext.Setup(buttonPressed)
             };
@@ -480,8 +486,8 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 });
 
             _applicationApplyApiClient.Setup(x =>
-                    x.UploadClarificationFile(_applicationId, It.IsAny<string>(), It.IsAny<IFormFileCollection>()))
-                .ReturnsAsync(true);
+                    x.UploadClarificationFile(_applicationId, It.IsAny<MultipartFormDataContent>()))
+                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
 
 
             _financialReviewDetails = new FinancialReviewDetails
@@ -513,9 +519,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             };
             var result = _controller.SubmitClarification(_applicationId, vm).Result as ViewResult;
 
-            Assert.IsTrue(result.ViewName.Contains("Application_Clarification.cshtml"));
+            Assert.That(result.ViewName.Contains("Application_Clarification.cshtml"), Is.True);
             var resultModel = result.Model as RoatpFinancialClarificationViewModel;
-            Assert.AreEqual(1, resultModel.ErrorMessages.Count);
+            Assert.That(1, Is.EqualTo(resultModel.ErrorMessages.Count));
         }
 
         [Test]
@@ -528,7 +534,7 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             _applicationApplyApiClient.Setup(x => x.DownloadClarificationFile(_applicationId, filename)).ReturnsAsync(response);
 
             var result = _controller.DownloadClarificationFile(_applicationId, filename).Result as FileStreamResult;
-            Assert.AreEqual(filename, result.FileDownloadName);
+            Assert.That(filename, Is.EqualTo(result.FileDownloadName));
         }
 
         [Test]
@@ -550,8 +556,8 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
 
             var result = await _controller.DownloadOpenApplications() as FileContentResult;
 
-            Assert.AreEqual(expectedFileContents, result.FileContents);
-            Assert.AreEqual($"current_applications_{DateTime.UtcNow:ddMMyy}.csv", result.FileDownloadName);
+            Assert.That(expectedFileContents, Is.EqualTo(result.FileContents));
+            Assert.That($"current_applications_{DateTime.UtcNow:ddMMyy}.csv", Is.EqualTo(result.FileDownloadName));
         }
     }
 }

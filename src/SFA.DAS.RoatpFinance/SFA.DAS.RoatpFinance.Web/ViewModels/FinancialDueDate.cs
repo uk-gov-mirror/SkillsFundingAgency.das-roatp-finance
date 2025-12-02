@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SFA.DAS.RoatpFinance.Web.ViewModels
+﻿namespace SFA.DAS.RoatpFinance.Web.ViewModels
 {
     public class FinancialDueDate
     {
