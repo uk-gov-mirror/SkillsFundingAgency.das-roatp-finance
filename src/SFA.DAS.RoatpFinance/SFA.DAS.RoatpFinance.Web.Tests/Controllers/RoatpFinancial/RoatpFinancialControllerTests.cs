@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
-using RestEase;
+using Refit;
 using SFA.DAS.QnA.Api.Types;
 using SFA.DAS.QnA.Api.Types.Page;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes;
@@ -84,6 +84,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
         public async Task ViewApplication_creates_correct_view_model_with_email()
         {
             _applicationApplyApiClient.Setup(x => x.GetApplication(_applicationId)).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
@@ -98,22 +101,39 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                             ApplicationSubmittedOn = DateTime.Today
                         },
                         Sequences = new List<RoatpApplySequence>
-                    {
-                        new RoatpApplySequence
                         {
-                            SequenceNo = 5,
-                            NotRequired = true
+                            new RoatpApplySequence
+                            {
+                                SequenceNo = 5,
+                                NotRequired = true
+                            }
                         }
                     }
-                    }
-                });
+                },
+                new RefitSettings()
+                ));
+
+            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                _financialReviewDetails,
+                new RefitSettings()
+            ));
 
             _applicationApplyApiClient.Setup(x => x.GetRoatpSequences()).ReturnsAsync(new List<RoatpSequence>());
             _qnaApiClient
                 .Setup(x => x.GetQuestionTag(_applicationId, RoatpQnaConstants.QnaQuestionTags.HasParentCompany))
                 .ReturnsAsync("No");
             _applicationApplyApiClient.Setup(x => x.GetContactForApplication(_applicationId))
-                .ReturnsAsync(new RoatpContact { Email = _emailAddress });
+                .ReturnsAsync(new ApiResponse<RoatpContact>(
+                    new HttpRequestMessage(HttpMethod.Get, ""),
+                    new HttpResponseMessage(HttpStatusCode.OK),
+                    new RoatpContact
+                    {
+                        Email = _emailAddress
+                    },
+                    new RefitSettings()
+                ));
 
             _qnaApiClient.Setup(x => x.GetSectionBySectionNo(_applicationId,
                     RoatpQnaConstants.RoatpSequences.YourOrganisation,
@@ -143,15 +163,33 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
         public async Task ViewApplication_shows_expected_view_based_on_status(string applicationStatus, string financialReviewStatus, string expectedView)
         {
             _applicationApplyApiClient.Setup(x => x.GetApplication(_applicationId)).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
                     ApplicationStatus = applicationStatus,
-                    ApplyData = new RoatpApplyData { ApplyDetails = new RoatpApplyDetails(), Sequences = new List<RoatpApplySequence>() }
-                });
+                    ApplyData = new RoatpApplyData
+                    {
+                        ApplyDetails = new RoatpApplyDetails(),
+                        Sequences = new List<RoatpApplySequence>()
+                    }
+                },
+                new RefitSettings()
+            ));
 
             _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(
-                new FinancialReviewDetails { ApplicationId = _applicationId, Status = financialReviewStatus });
+                new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                new FinancialReviewDetails
+                {
+                    ApplicationId = _applicationId,
+                    Status = financialReviewStatus
+                },
+                new RefitSettings()
+            ));
 
             _applicationApplyApiClient.Setup(x => x.GetRoatpSequences()).ReturnsAsync(new List<RoatpSequence>());
 
@@ -159,7 +197,15 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 .ReturnsAsync("No");
 
             _applicationApplyApiClient.Setup(x => x.GetContactForApplication(_applicationId))
-                .ReturnsAsync(new RoatpContact { Email = _emailAddress });
+                .ReturnsAsync(new ApiResponse<RoatpContact>(
+                    new HttpRequestMessage(HttpMethod.Get, ""),
+                    new HttpResponseMessage(HttpStatusCode.OK),
+                    new RoatpContact
+                    {
+                        Email = _emailAddress
+                    },
+                    new RefitSettings()
+                ));
 
             _qnaApiClient.Setup(x => x.GetSectionBySectionNo(_applicationId,
                     RoatpQnaConstants.RoatpSequences.YourOrganisation,
@@ -181,9 +227,14 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
         [Test]
         public void SubmitClarification_redirects_when_no_application()
         {
-            _applicationApplyApiClient.Setup(x => x.GetApplication(_applicationId)).ReturnsAsync((RoatpApply)null);
+            _applicationApplyApiClient.Setup(x => x.GetApplication(_applicationId)).ReturnsAsync(new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                null,
+                new RefitSettings()
+            ));
 
-            var result = _controller.SubmitClarification(_applicationId, new RoatpFinancialClarificationViewModel()).Result as RedirectToActionResult;
+            var result = _controller.SubmitClarification(_applicationId, new RoatpFinancialClarificationViewModel() { ApplicationId = _applicationId }).Result as RedirectToActionResult;
             Assert.That("OpenApplications", Is.EqualTo(result.ActionName));
         }
 
@@ -199,6 +250,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 .Returns(new ValidationResponse { });
 
             _applicationApplyApiClient.Setup(x => x.GetApplication(It.IsAny<Guid>())).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
@@ -221,7 +275,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                             }
                         }
                     }
-                });
+                },
+                new RefitSettings()
+            ));
             _financialReviewDetails = new FinancialReviewDetails
             {
                 GradedBy = MockHttpContextAccessor.Name,
@@ -234,7 +290,12 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 ClarificationRequestedOn = DateTime.UtcNow
             };
 
-            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(_financialReviewDetails);
+            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                _financialReviewDetails,
+                new RefitSettings()
+            ));
 
             var vm = new RoatpFinancialClarificationViewModel
             {
@@ -275,12 +336,15 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             {
                 ControllerContext = MockedControllerContext.Setup(buttonPressed)
             };
-            
+
             _clarificationValidator.Setup(x =>
                     x.Validate(It.IsAny<RoatpFinancialClarificationViewModel>(), It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(new ValidationResponse { });
 
             _applicationApplyApiClient.Setup(x => x.GetApplication(It.IsAny<Guid>())).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
@@ -303,11 +367,13 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                             }
                         }
                     }
-                });
+                },
+                new RefitSettings()
+            ));
 
             _applicationApplyApiClient.Setup(x =>
                     x.UploadClarificationFile(_applicationId, It.IsAny<MultipartFormDataContent>()))
-                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
+                .ReturnsAsync(new ApiResponse<string>(new HttpResponseMessage(HttpStatusCode.OK), string.Empty, new RefitSettings()));
 
 
             _financialReviewDetails = new FinancialReviewDetails
@@ -320,7 +386,12 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 ClarificationResponse = "clarification response",
                 ClarificationRequestedOn = DateTime.UtcNow
             };
-            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(_financialReviewDetails);
+            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                _financialReviewDetails,
+                new RefitSettings()
+            ));
 
             var vm = new RoatpFinancialClarificationViewModel
             {
@@ -382,6 +453,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
             };
 
             _applicationApplyApiClient.Setup(x => x.GetApplication(It.IsAny<Guid>())).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
@@ -404,14 +478,21 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                             }
                         }
                     }
-                });
+                },
+                new RefitSettings()
+            ));
 
             var model = new RemoveClarificationFileCommandModel { UserId = "", FileName = fileToBeRemoved };
             _applicationApplyApiClient.Setup(x =>
                     x.RemoveClarificationFile(It.IsAny<Guid>(), It.IsAny<RemoveClarificationFileCommandModel>()))
-                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
+                .ReturnsAsync(new ApiResponse<string>(new HttpResponseMessage(HttpStatusCode.OK), string.Empty, new RefitSettings()));
 
-            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new FinancialReviewDetails());
+            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                new FinancialReviewDetails(),
+                new RefitSettings()
+            ));
 
             var vm = new RoatpFinancialClarificationViewModel
             {
@@ -461,6 +542,9 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 .Returns(new ValidationResponse { Errors = new List<ValidationErrorDetail> { new ValidationErrorDetail { ErrorMessage = "error message", Field = "errorField" } } });
 
             _applicationApplyApiClient.Setup(x => x.GetApplication(It.IsAny<Guid>())).ReturnsAsync(
+                new ApiResponse<RoatpApply>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
                 new RoatpApply
                 {
                     ApplicationId = _applicationId,
@@ -483,11 +567,13 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                             }
                         }
                     }
-                });
+                },
+                new RefitSettings()
+            ));
 
             _applicationApplyApiClient.Setup(x =>
                     x.UploadClarificationFile(_applicationId, It.IsAny<MultipartFormDataContent>()))
-                .ReturnsAsync(new Response<string>("", new HttpResponseMessage(HttpStatusCode.OK), () => ""));
+                .ReturnsAsync(new ApiResponse<string>(new HttpResponseMessage(HttpStatusCode.OK), string.Empty, new RefitSettings()));
 
 
             _financialReviewDetails = new FinancialReviewDetails
@@ -501,7 +587,12 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
                 ClarificationRequestedOn = DateTime.UtcNow
             };
 
-            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(_financialReviewDetails);
+            _applicationApplyApiClient.Setup(x => x.GetFinancialReviewDetails(_applicationId)).ReturnsAsync(new ApiResponse<FinancialReviewDetails>(
+                new HttpRequestMessage(HttpMethod.Get, ""),
+                new HttpResponseMessage(HttpStatusCode.OK),
+                _financialReviewDetails,
+                new RefitSettings()
+            ));
 
             var vm = new RoatpFinancialClarificationViewModel
             {
@@ -541,7 +632,6 @@ namespace SFA.DAS.RoatpFinance.Web.Tests.Controllers.RoatpFinancial
         public async Task DownloadOpenApplications_downloads_file()
         {
             // Need this otherwise AutoMapper will complain
-            Infrastructure.AutoMapper.MappingStartup.AddMappings();
 
             var apiResponse = new List<RoatpFinancialSummaryDownloadItem>();
 

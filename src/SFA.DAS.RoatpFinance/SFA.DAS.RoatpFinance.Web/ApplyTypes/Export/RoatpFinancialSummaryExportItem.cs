@@ -23,5 +23,38 @@
         public DateTime? AccountingReferenceDate { get; set; }
         public byte? AccountingPeriod { get; set; }
         public long? AverageNumberofFTEEmployees { get; set; }
+
+        public static implicit operator RoatpFinancialSummaryExportItem(RoatpFinancialSummaryDownloadItem source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new RoatpFinancialSummaryExportItem
+            {
+                ApplicationId = source.ApplicationId,
+                ApplicationReference = source.ApplicationReferenceNumber,
+                Route = source.ApplicationRoute,
+                ProviderName = source.OrganisationName,
+                Ukprn = source.Ukprn,
+                SubmissionDate = source.SubmittedDate ?? default,
+                GatewayCompletionDate = source.GatewayOutcomeDate,
+                CharityNo = source.CharityNumber,
+                CompanyNo = source.CompanyNumber,
+                TurnOver = source.FinancialData?.TurnOver,
+                Depreciation = source.FinancialData?.Depreciation,
+                ProfitLoss = source.FinancialData?.ProfitLoss,
+                Dividends = source.FinancialData?.Dividends,
+                IntangibleAssets = source.FinancialData?.IntangibleAssets,
+                Assets = source.FinancialData?.Assets,
+                Liabilities = source.FinancialData?.Liabilities,
+                ShareholderFunds = source.FinancialData?.ShareholderFunds,
+                Borrowings = source.FinancialData?.Borrowings,
+                AccountingReferenceDate = source.FinancialData?.AccountingReferenceDate,
+                AccountingPeriod = source.FinancialData?.AccountingPeriod,
+                AverageNumberofFTEEmployees = source.FinancialData?.AverageNumberofFTEEmployees
+            };
+        }
     }
 }

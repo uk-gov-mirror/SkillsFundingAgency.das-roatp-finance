@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -43,15 +42,17 @@ namespace SFA.DAS.RoatpFinance.Web.TagHelpers
         [HtmlAttributeNotBound]
         public ViewContext ViewContext { get; set; }
 
-        private readonly IUrlHelper _urlHelper;
+        private readonly IUrlHelperFactory _urlHelperFactory;
 
-        public SortableColumnTagHelper(IUrlHelperFactory urlHelperFactory, IActionContextAccessor contextAccessor)
+        public SortableColumnTagHelper(IUrlHelperFactory urlHelperFactory)
         {
-            _urlHelper = urlHelperFactory.GetUrlHelper(contextAccessor.ActionContext);
+            _urlHelperFactory = urlHelperFactory;
         }
 
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
+            var urlHelper = _urlHelperFactory.GetUrlHelper(ViewContext);
+
             var action = ViewContext.RouteData.Values["action"] as string;
             var controller = ViewContext.RouteData.Values["controller"] as string;
 
@@ -66,7 +67,7 @@ namespace SFA.DAS.RoatpFinance.Web.TagHelpers
                 SortOrder = isSortColumn ? sortOrder.Reverse().ToString() : DefaultSortOrder.ToString()
             };
 
-            var href = _urlHelper.Action(action, controller, values);
+            var href = urlHelper.Action(action, controller, values);
 
             var sortOrderCssSuffix = string.Empty;
             if (isSortColumn)

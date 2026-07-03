@@ -1,21 +1,18 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using RestEase.HttpClientFactory;
+using Microsoft.Extensions.Primitives;
+using Refit;
+using SFA.DAS.Api.Common.Infrastructure;
+using SFA.DAS.Configuration.AzureTableStorage;
+using SFA.DAS.DfESignIn.Auth.AppStart;
+using SFA.DAS.DfESignIn.Auth.Enums;
 using SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients;
-using SFA.DAS.RoatpFinance.Web.Infrastructure.AutoMapper;
 using SFA.DAS.RoatpFinance.Web.ModelBinders;
 using SFA.DAS.RoatpFinance.Web.Services;
 using SFA.DAS.RoatpFinance.Web.Settings;
 using SFA.DAS.RoatpFinance.Web.StartupExtensions;
 using SFA.DAS.RoatpFinance.Web.Validators;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using FluentValidation;
-using Microsoft.Extensions.Primitives;
-using SFA.DAS.Api.Common.Infrastructure;
-using SFA.DAS.Configuration.AzureTableStorage;
-using SFA.DAS.DfESignIn.Auth.AppStart;
-using SFA.DAS.DfESignIn.Auth.Enums;
 
 namespace SFA.DAS.RoatpFinance.Web
 {
@@ -34,7 +31,7 @@ namespace SFA.DAS.RoatpFinance.Web
         {
             _env = env;
             _logger = logger;
-            
+
             var config = new ConfigurationBuilder()
                 .AddConfiguration(configuration)
                 .SetBasePath(Directory.GetCurrentDirectory());
@@ -93,8 +90,6 @@ namespace SFA.DAS.RoatpFinance.Web
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
-            services.AddValidatorsFromAssemblyContaining<Startup>();
-
             services.AddSession(opt => { opt.IdleTimeout = TimeSpan.FromHours(1); });
 
             services.AddCache(ApplicationConfiguration, _env);
@@ -104,11 +99,11 @@ namespace SFA.DAS.RoatpFinance.Web
 
             services.AddHealthChecks();
 
-            services.AddApplicationInsightsTelemetry();
-            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddOpenTelemetryRegistration(_configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]!);
+
+            services.AddHttpContextAccessor();
 
             ConfigureClients(services);
-            MappingStartup.AddMappings();
 
             ConfigureDependencyInjection(services);
         }
@@ -130,21 +125,31 @@ namespace SFA.DAS.RoatpFinance.Web
 
         private void ConfigureClients(IServiceCollection services)
         {
-            services.AddRestEaseClient<IQnaApiClient>(ApplicationConfiguration.QnaApiAuthentication.ApiBaseAddress)
+            services
+                .AddRefitClient<IQnaApiClient>()
+                .ConfigureHttpClient(c =>
+                {
+                    c.BaseAddress = new Uri(ApplicationConfiguration.QnaApiAuthentication.ApiBaseAddress);
+                })
                 .AddHttpMessageHandler(() =>
-                    new InnerApiAuthenticationHeaderHandler(new AzureClientCredentialHelper(_configuration),
+                    new InnerApiAuthenticationHeaderHandler(
+                        new AzureClientCredentialHelper(_configuration),
                         ApplicationConfiguration.QnaApiAuthentication.Identifier));
 
-            services.AddRestEaseClient<IRoatpApplicationApiClient>(ApplicationConfiguration.RoatpApplicationApiAuthentication.ApiBaseAddress)
+            services
+                .AddRefitClient<IRoatpApplicationApiClient>()
+                .ConfigureHttpClient(c =>
+                {
+                    c.BaseAddress = new Uri(ApplicationConfiguration.RoatpApplicationApiAuthentication.ApiBaseAddress);
+                })
                 .AddHttpMessageHandler(() =>
-                    new InnerApiAuthenticationHeaderHandler(new AzureClientCredentialHelper(_configuration),
+                    new InnerApiAuthenticationHeaderHandler(
+                        new AzureClientCredentialHelper(_configuration),
                         ApplicationConfiguration.RoatpApplicationApiAuthentication.Identifier));
         }
 
         private void ConfigureDependencyInjection(IServiceCollection services)
         {
-            services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
-
             services.AddTransient(x => ApplicationConfiguration);
 
             services.AddTransient<ISearchTermValidator, SearchTermValidator>();

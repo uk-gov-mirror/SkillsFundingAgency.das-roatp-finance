@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using System.IO.Compression;
+using System.Net;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SFA.DAS.QnA.Api.Types;
@@ -7,18 +9,15 @@ using SFA.DAS.RoatpFinance.Web.ApplyTypes.Apply;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Dashboard;
 using SFA.DAS.RoatpFinance.Web.ApplyTypes.Export;
 using SFA.DAS.RoatpFinance.Web.Domain;
+using SFA.DAS.RoatpFinance.Web.Extensions;
 using SFA.DAS.RoatpFinance.Web.Infrastructure.ApiClients;
+using SFA.DAS.RoatpFinance.Web.Infrastructure.Models;
 using SFA.DAS.RoatpFinance.Web.ModelBinders;
 using SFA.DAS.RoatpFinance.Web.Services;
 using SFA.DAS.RoatpFinance.Web.Validators;
+using SFA.DAS.RoatpFinance.Web.Validators.Validation;
 using SFA.DAS.RoatpFinance.Web.ViewModels;
 using SFA.DAS.RoatpFinance.Web.ViewModels.Paging;
-using System.IO.Compression;
-using System.Net;
-using System.Net.Http.Headers;
-using SFA.DAS.RoatpFinance.Web.Extensions;
-using SFA.DAS.RoatpFinance.Web.Infrastructure.Models;
-using SFA.DAS.RoatpFinance.Web.Validators.Validation;
 
 namespace SFA.DAS.RoatpFinance.Web.Controllers
 {
@@ -69,7 +68,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         {
             var applications = await _applyApiClient.GetOpenFinancialApplicationsForDownload();
 
-            var exportModel = Mapper.Map<List<RoatpFinancialSummaryExportItem>>(applications);
+            var exportModel = applications.Select(x => (RoatpFinancialSummaryExportItem)x).ToList();
 
             var bytearray = _csvExportService
                     .WriteCsvToByteArray<RoatpFinancialSummaryExportItem, RoatpFinancialSummaryExportCsvMap>(exportModel);
@@ -138,7 +137,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         [HttpGet("/Roatp/Financial/{applicationId}")]
         public async Task<IActionResult> ViewApplication(Guid applicationId)
         {
-            var application = await _applyApiClient.GetApplication(applicationId);
+            var applicationApiResponse = await _applyApiClient.GetApplication(applicationId);
+            var application = applicationApiResponse.Content;
             if (application is null)
             {
                 return RedirectToAction(nameof(OpenApplications));
@@ -154,7 +154,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                     .Where(x => x.Field != "FinancialReviewDetails.SelectedGrade").ToList();
             }
 
-            var contact = await _applyApiClient.GetContactForApplication(application.ApplicationId);
+            var contactApiResponse = await _applyApiClient.GetContactForApplication(application.ApplicationId);
+            var contact = contactApiResponse.Content;
             vm.ApplicantEmailAddress = contact?.Email;
 
             if (vm.ApplicationStatus == ApplicationStatus.Removed
@@ -164,7 +165,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
             }
             else
             {
-                var financialReviewDetails = await _applyApiClient.GetFinancialReviewDetails(applicationId);
+                var financialReviewDetailsApiResponse = await _applyApiClient.GetFinancialReviewDetails(applicationId);
+                var financialReviewDetails = financialReviewDetailsApiResponse.Content;
                 switch (financialReviewDetails?.Status)
                 {
                     case FinancialReviewStatus.New:
@@ -187,7 +189,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         [HttpPost("/Roatp/Financial/{applicationId}")]
         public async Task<IActionResult> GradeApplication(Guid applicationId, [FromForm] RoatpFinancialApplicationViewModel vm)
         {
-            var application = await _applyApiClient.GetApplication(vm.ApplicationId);
+            var applicationApiResponse = await _applyApiClient.GetApplication(vm.ApplicationId);
+            var application = applicationApiResponse.Content;
             if (application is null)
             {
                 return RedirectToAction(nameof(OpenApplications));
@@ -233,14 +236,16 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         public async Task<IActionResult> SubmitClarification(Guid applicationId, RoatpFinancialClarificationViewModel vm)
         {
             var removeClarificationFileName = string.Empty;
-            var application = await _applyApiClient.GetApplication(vm.ApplicationId);
+            var applicationApiResponse = await _applyApiClient.GetApplication(vm.ApplicationId);
+            var application = applicationApiResponse.Content;
 
             if (application is null)
             {
                 return RedirectToAction(nameof(OpenApplications));
             }
 
-            var financialReview = await _applyApiClient.GetFinancialReviewDetails(vm.ApplicationId);
+            var financialReviewApiResponse = await _applyApiClient.GetFinancialReviewDetails(vm.ApplicationId);
+            var financialReview = financialReviewApiResponse.Content;
             var isClarificationFilesUpload = HttpContext.Request.Form["submitClarificationFiles"].Count != 0;
             var isClarificationOutcome = HttpContext.Request.Form["submitClarificationOutcome"].Count == 1;
             if (!isClarificationFilesUpload && !isClarificationOutcome &&
@@ -317,7 +322,8 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         {
             var financialSection = await _qnaApiClient.GetSection(applicationId, sectionId);
 
-            var application = await _applyApiClient.GetApplication(applicationId);
+            var applicationApiResponse = await _applyApiClient.GetApplication(applicationId);
+            var application = applicationApiResponse.Content;
 
             if (financialSection != null)
             {
@@ -365,8 +371,10 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
         [HttpGet("/Roatp/Financial/{applicationId}/Graded")]
         public async Task<IActionResult> Graded(Guid applicationId)
         {
-            var application = await _applyApiClient.GetApplication(applicationId);
-            var financialReviewDetails = await _applyApiClient.GetFinancialReviewDetails(applicationId);
+            var applicationApiResponse = await _applyApiClient.GetApplication(applicationId);
+            var application = applicationApiResponse.Content;
+            var financialReviewDetailsApiResponse = await _applyApiClient.GetFinancialReviewDetails(applicationId);
+            var financialReviewDetails = financialReviewDetailsApiResponse.Content;
             if (application is null || financialReviewDetails is null)
             {
                 return RedirectToAction(nameof(OpenApplications));
@@ -380,12 +388,12 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
          string removeClarificationFileName, RoatpApply application)
         {
             var model = new RemoveClarificationFileCommandModel
-                { UserId = HttpContext.User.UserId(), FileName = removeClarificationFileName };
+            { UserId = HttpContext.User.UserId(), FileName = removeClarificationFileName };
             var fileRemoved = await _applyApiClient.RemoveClarificationFile(applicationId, model);
 
 
             var financialReviewDets = vm.FinancialReviewDetails;
-            if (fileRemoved.ResponseMessage.StatusCode == HttpStatusCode.OK)
+            if (fileRemoved.StatusCode == HttpStatusCode.OK)
             {
                 var clarificationFiles = financialReviewDets.ClarificationFiles;
                 var newClarificationFiles = new List<ClarificationFile>();
@@ -448,7 +456,7 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
                     var fileUploadedSuccessfully = await _applyApiClient.UploadClarificationFile(applicationId, content);
 
 
-                    if (fileUploadedSuccessfully.ResponseMessage.StatusCode == HttpStatusCode.OK)
+                    if (fileUploadedSuccessfully.StatusCode == HttpStatusCode.OK)
                     {
                         if (financialReviewDets.ClarificationFiles == null)
                             financialReviewDets.ClarificationFiles = new List<ClarificationFile>();
@@ -499,9 +507,10 @@ namespace SFA.DAS.RoatpFinance.Web.Controllers
             var organisationTypeSection = await GetOrganisationTypeSection(application.ApplicationId);
             var financialSections = await GetFinancialSections(application);
 
-            var financialReviewDetails = await _applyApiClient.GetFinancialReviewDetails(application.ApplicationId);
+            var financialReviewDetailsApiResponse = await _applyApiClient.GetFinancialReviewDetails(application.ApplicationId);
+            var financialReviewDetails = financialReviewDetailsApiResponse.Content;
             var viewModel = new RoatpFinancialApplicationViewModel(application, financialReviewDetails, parentCompanySection, activelyTradingSection, organisationTypeSection, financialSections);
-            
+
             return viewModel;
         }
 
